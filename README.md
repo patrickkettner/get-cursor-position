@@ -36,7 +36,6 @@ console.log('row: ' + pos.row);
 console.log('col: ' + pos.col);
 ```
 
-
 ## Contributing
 
 Pull requests and stars are highly welcome.
