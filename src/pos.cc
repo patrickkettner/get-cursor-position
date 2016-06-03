@@ -3,8 +3,13 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <unistd.h>
 #include <termios.h>
+
+#if defined _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 
 #define RD_EOF -1
