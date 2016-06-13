@@ -100,7 +100,7 @@ int current_tty(void)
 int cursor_position(const int tty, int *const rowptr, int *const colptr)
 {
     struct termios saved, temporary;
-    int            retval, result, rows, cols, saved_errno;
+    int    retval, result, rows, cols, saved_errno;
 
     /* Bad tty? */
     if (tty == -1)
