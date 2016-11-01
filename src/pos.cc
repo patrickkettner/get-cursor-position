@@ -1,22 +1,56 @@
 #include <node.h>
 #include <v8.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <termios.h>
 
-#if defined _WIN32
+
+using namespace v8;
+
+
+#ifdef _WIN32
 #include <windows.h>
+
+
+int cursor_position(int *const rowptr, int *const colptr)
+{
+    HANDLE                     console_handle;
+    CONSOLE_SCREEN_BUFFER_INFO console_info;
+
+    console_handle = CreateFileW(L"CONOUT$",
+                                 GENERIC_READ | GENERIC_WRITE,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                 NULL,
+                                 OPEN_EXISTING,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 NULL);
+
+    if (console_handle == INVALID_HANDLE_VALUE)
+        return GetLastError();
+
+    if (!GetConsoleScreenBufferInfo(console_handle, &console_info))
+        return GetLastError();
+
+    /* Success! */
+
+    if (rowptr)
+        *rowptr = console_info.dwCursorPosition.Y + 1;
+
+    if (colptr)
+        *colptr = console_info.dwCursorPosition.X + 1;
+
+    /* Done. */
+    return 0;
+}
+
+
 #else
+#include <fcntl.h>
 #include <unistd.h>
-#endif
+#include <termios.h>
 
 
 #define RD_EOF -1
 #define RD_EIO -2
-
-
-using namespace v8;
 
 
 static inline int rd(const int fd)
@@ -216,6 +250,7 @@ int cursor_position(int *const rowptr, int *const colptr)
     /* Done. */
     return retval;
 }
+#endif
 
 void Method(const v8::FunctionCallbackInfo<Value>& args) {
 	Isolate* isolate = Isolate::GetCurrent();
