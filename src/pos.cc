@@ -97,10 +97,12 @@ int current_tty(void)
  * This function returns 0 if success, errno code otherwise.
  * Actual errno will be unchanged.
  */
-int cursor_position(const int tty, int *const rowptr, int *const colptr)
+int cursor_position(int *const rowptr, int *const colptr)
 {
     struct termios saved, temporary;
-    int    retval, result, rows, cols, saved_errno;
+    int    tty, retval, result, rows, cols, saved_errno;
+
+    tty = current_tty();
 
     /* Bad tty? */
     if (tty == -1)
@@ -219,17 +221,13 @@ void Method(const v8::FunctionCallbackInfo<Value>& args) {
 	Isolate* isolate = Isolate::GetCurrent();
   	HandleScope scope(isolate);
 
-	int ret, fd, row, col;
+	int ret, row, col;
 
     ret = 0;
     row = 0;
     col = 0;
 
-    fd = current_tty();
-    if (fd == -1)
-        return;
-
-    if (cursor_position(fd, &row, &col))
+    if (cursor_position(&row, &col))
         return;
 
     if (row < 1 || col < 1)
