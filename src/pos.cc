@@ -1,22 +1,56 @@
 #include <node.h>
 #include <v8.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <termios.h>
 
-#if defined _WIN32
+
+using namespace v8;
+
+
+#ifdef _WIN32
 #include <windows.h>
+
+
+int cursor_position(int *const rowptr, int *const colptr)
+{
+    HANDLE                     console_handle;
+    CONSOLE_SCREEN_BUFFER_INFO console_info;
+
+    console_handle = CreateFileW(L"CONOUT$",
+                                 GENERIC_READ | GENERIC_WRITE,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                 NULL,
+                                 OPEN_EXISTING,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 NULL);
+
+    if (console_handle == INVALID_HANDLE_VALUE)
+        return GetLastError();
+
+    if (!GetConsoleScreenBufferInfo(console_handle, &console_info))
+        return GetLastError();
+
+    /* Success! */
+
+    if (rowptr)
+        *rowptr = console_info.dwCursorPosition.Y + 1;
+
+    if (colptr)
+        *colptr = console_info.dwCursorPosition.X + 1;
+
+    /* Done. */
+    return 0;
+}
+
+
 #else
+#include <fcntl.h>
 #include <unistd.h>
-#endif
+#include <termios.h>
 
 
 #define RD_EOF -1
 #define RD_EIO -2
-
-
-using namespace v8;
 
 
 static inline int rd(const int fd)
@@ -97,10 +131,12 @@ int current_tty(void)
  * This function returns 0 if success, errno code otherwise.
  * Actual errno will be unchanged.
  */
-int cursor_position(const int tty, int *const rowptr, int *const colptr)
+int cursor_position(int *const rowptr, int *const colptr)
 {
     struct termios saved, temporary;
-    int    retval, result, rows, cols, saved_errno;
+    int    tty, retval, result, rows, cols, saved_errno;
+
+    tty = current_tty();
 
     /* Bad tty? */
     if (tty == -1)
@@ -214,22 +250,19 @@ int cursor_position(const int tty, int *const rowptr, int *const colptr)
     /* Done. */
     return retval;
 }
+#endif
 
 void Method(const v8::FunctionCallbackInfo<Value>& args) {
 	Isolate* isolate = Isolate::GetCurrent();
   	HandleScope scope(isolate);
 
-	int ret, fd, row, col;
+	int ret, row, col;
 
     ret = 0;
     row = 0;
     col = 0;
 
-    fd = current_tty();
-    if (fd == -1)
-        return;
-
-    if (cursor_position(fd, &row, &col))
+    if (cursor_position(&row, &col))
         return;
 
     if (row < 1 || col < 1)

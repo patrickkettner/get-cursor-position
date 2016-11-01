@@ -13,6 +13,20 @@ function raw(mode) {
 
 
 pos.async = function (callback, context) {
+  if (process.platform === 'win32') {
+    process.nextTick(function() {
+      var position = pos.sync();
+
+      if (position) {
+        callback && callback.call(context, {
+          row: position.row,
+          col: position.col
+        });
+      }
+    });
+
+    return;
+  }
 
   // start listening
   process.stdin.resume();
